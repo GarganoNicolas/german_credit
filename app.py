@@ -1,35 +1,31 @@
 import gradio as gr
 import pandas as pd
 import pickle
-import os
+
 
 # Define params names
 PARAMS_NAME = [
-            "gender",
-            "age",
-            "hypertension",
-            "heart_disease",
-            "ever_married",
-            "work_type",
-            "Residence_type",
-            "avg_glucose_level",
-            "bmi",
-            "smoking_status"
+            "Age",
+            "Sex",
+            "Job",
+            "Housing",
+            "Saving_accounts",
+            "Checking_account",
+            "Credit_amount",
+            "Duration",
+            "Purpose"
 ]
 
            
 # Load model
-with open("model/model1.pkl", "rb") as f:
+with open("german_credit/model/model1.pkl", "rb") as f:
     model = pickle.load(f)
 
 
-import os
 
-# Hacking my own protocol
-os.chmod('model/saved_bins_bmi.pkl', 0o777)
-
-with open('model/saved_bins_bmi.pkl', 'rb') as handle:
-    saved_bins_bmi = pickle.load(handle)
+COLUMNS_PATH = "german_credit/model/columns.pickle"
+with open(COLUMNS_PATH, 'rb') as handle:
+    ohe_tr = pickle.load(handle)
 
 
 def predict(*args):
@@ -42,29 +38,41 @@ def predict(*args):
     single_instance = pd.DataFrame.from_dict(answer_dict)
 
 
-    single_instance["bmi"] = pd.cut(single_instance['bmi'],
-                                     bins=saved_bins_bmi, 
-                                     include_lowest=True)
-    single_instance['bmi'] = single_instance['bmi'].cat.add_categories('null')
+    data1 = single_instance.replace({
+        'Job': {
+            'unskilled and non-resident': 0, 
+            'unskilled and resident': 1, 
+            'skilled': 2, 
+            'highly skilled': 3
+        },
+        'Checking_account': {
+            'little': 1, 
+            'moderate': 2, 
+            'other': 0, 
+            'rich': 3
+        },
+        'Saving_accounts': {
+            'other': 0, 
+            'little': 1, 
+            'quite rich': 3, 
+            'rich': 4, 
+            'moderate': 2
+        },
+        'Sex': {
+            'male': 0, 
+            'female': 1
+        },
+        'Housing': {
+            'own': 2, 
+            'free': 1, 
+            'rent': 0
+        },
 
-    single_instance_numbers = single_instance
+    })
+    data_ohe = pd.get_dummies(data1).reindex(columns = ohe_tr).fillna(0)
+
     
-    for columna in single_instance_numbers:
-            # Verificar si el tipo de dato es "object"
-            if single_instance_numbers[columna].dtype == 'object':
-                # Obtener los valores únicos de la columna
-                valores_unicos = single_instance_numbers[columna].unique()
-                
-                # Crear un diccionario de reemplazo
-                diccionario_reemplazo = {valor: indice for indice, valor in enumerate(valores_unicos)}
-                
-                # Reemplazar los valores en la columna
-                single_instance_numbers[columna] = single_instance_numbers[columna].map(diccionario_reemplazo)
-
-    dataEnd_ohe = pd.get_dummies(single_instance_numbers).fillna(0)
-
-    
-    prediction = model.predict(dataEnd_ohe)
+    prediction = model.predict(data_ohe)
 
 
     # Cast numpy.int64 to just a int
@@ -74,7 +82,7 @@ def predict(*args):
     # Adaptación respuesta
     response = stroke
     if stroke == 1:
-        response = "Keep rockin' babe!"
+        response = "Oh, "
     if stroke == 0:
         response = "This brain will colapse in 3.. 2.. 1.. 🤯 "
 
@@ -98,72 +106,70 @@ with gr.Blocks() as demo:
                 """
             )
             
-            gender = gr.Radio(
-                label='Gender',
-                choices=['Male', 'Female'],
-                value='Female',
-            )
-
-            age = gr.Slider(
+            Age = gr.Slider(
                 label='Age',
-                minimum=35.0,
-                maximum=82.0,
+                minimum=19,
+                maximum=75,
                 step=1,
                 randomize=True
             )
 
-            hypertension = gr.Radio(
-                label='Hypertension',
-                choices=['No', 'Yes'],
-                value='No',
+            Sex = gr.Radio(
+                label='Sex',
+                choices=['male', 'female'],
+                value='male',
             )
 
-            heart_disease = gr.Radio(
-                label='Heart Disease',
-                choices=['Yes', 'No'],
-                value='No',
-            )
-
-            ever_married = gr.Radio(
-                label='Ever Married',
-                choices=['Yes', 'No'],
-                value='Yes',
-            )
-
-            work_type = gr.Radio(
-                label='Work Type',
-                choices=['Private', 'Self-employed', 'Govt-job'],
-                value='Private',
-            )
-
-            Residence_type = gr.Radio(
-                label='Residence Type',
-                choices=['Urban', 'Rural'],
-                value='Urban',
-            )
-
-            avg_glucose_level = gr.Slider(
-                label='Avg Glucose Level',
-                minimum=55.22,
-                maximum=271.74,
-                step=0.1,
-                randomize=True
-            )
-
-            bmi = gr.Slider(
-                label='Bmi',
-                minimum=11.3,
-                maximum=92.0,
-                step=0.1,
-                randomize=True
-            )
-
-            smoking_status = gr.Dropdown(
-                label='Smoking Status',
-                choices=['formerly smoked', 'never smoked', 'smokes', 'Unknown'],
+            Job = gr.Dropdown(
+                label='Job',
+                choices=['skilled', 'unskilled and resident', 'highly skilled', 'unskilled and non-resident'],
                 multiselect=False,
-                value='never smoked',
-            )         
+                value='skilled',
+            )
+
+            Housing = gr.Radio(
+                label='Housing',
+                choices=['own', 'free', 'rent'],
+                value='own',
+            )
+
+            Saving_accounts = gr.Dropdown(
+                label='Saving_Accounts',
+                choices=['other', 'little', 'quite rich', 'rich', 'moderate'],
+                multiselect=False,
+                value='little',
+            )
+
+            Checking_account = gr.Dropdown(
+                label='Checking_Account',
+                choices=['little', 'moderate', 'other', 'rich'],
+                multiselect=False,
+                value='other',
+            )
+
+            Credit_amount = gr.Slider(
+                label='Credit_Amount',
+                minimum=250,
+                maximum=18424,
+                step=1,
+                randomize=True
+            )
+
+            Duration = gr.Slider(
+                label='Duration',
+                minimum=4,
+                maximum=72,
+                step=1,
+                randomize=True
+            )
+
+            Purpose = gr.Dropdown(
+                label='Purpose',
+                choices=['radio/TV', 'education', 'furniture/equipment', 'car', 'business', 'domestic appliances', 'repairs', 'vacation/others'],
+                multiselect=False,
+                value='car',
+            )
+     
 
 
 
@@ -181,16 +187,15 @@ with gr.Blocks() as demo:
             predict_btn.click(
                 predict,
                 inputs=[
-                    gender,
-                    age,
-                    hypertension,
-                    heart_disease,
-                    ever_married,
-                    work_type,
-                    Residence_type,
-                    avg_glucose_level,
-                    bmi,
-                    smoking_status,
+                    Age,
+                    Sex,
+                    Job,
+                    Housing,
+                    Saving_accounts,
+                    Checking_account,
+                    Credit_amount,
+                    Duration,
+                    Purpose,
                 ],
                 outputs=[label],
                 api_name="prediccion"

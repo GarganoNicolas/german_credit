@@ -82,9 +82,9 @@ def predict(*args):
     # Adaptación respuesta
     response = stroke
     if stroke == 1:
-        response = "Oh, "
+        response = "Oh, we are so sorry, just today we can't give credits"
     if stroke == 0:
-        response = "This brain will colapse in 3.. 2.. 1.. 🤯 "
+        response = "Mister, came from here, of course we have the credit you need"
 
 
     return response
@@ -93,7 +93,7 @@ def predict(*args):
 with gr.Blocks() as demo:
     gr.Markdown(
         """
-        #   Stroke Prevention 🤯
+        #   Ask for a credit 💰 
         """
     )
 
@@ -178,11 +178,11 @@ with gr.Blocks() as demo:
 
             gr.Markdown(
                 """
-                ## Look if your brain is in risk 🧠
+                ## Look if we have that money you need 💸
                 """
             )
 
-            label = gr.Label(label="Brain status")
+            label = gr.Label(label="credit status")
             predict_btn = gr.Button(value="Click me please!")
             predict_btn.click(
                 predict,
@@ -203,7 +203,7 @@ with gr.Blocks() as demo:
             
             gr.Markdown(
                 """
-                ## <img src="https://media.giphy.com/media/ijb5ZE9zIQ2Nq/giphy.gif" alt="GIF">
+                ## <img src="https://media.giphy.com/media/3o6gDWzmAzrpi5DQU8/giphy.gif" alt="GIF">
                 """
             )
 

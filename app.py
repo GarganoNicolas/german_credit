@@ -76,14 +76,14 @@ def predict(*args):
 
 
     # Cast numpy.int64 to just a int
-    stroke = int(prediction[0])
+    credit = int(prediction[0])
 
 
     # Adaptación respuesta
-    response = stroke
-    if stroke == 1:
+    response = credit
+    if credit == 1:
         response = "Oh, we are so sorry, just today we can't give credits"
-    if stroke == 0:
+    if credit == 0:
         response = "Mister, came from here, of course we have the credit you need"
 
 
